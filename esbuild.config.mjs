@@ -3,7 +3,7 @@ import * as esbuild from "esbuild";
 async function buildAll() {
   await esbuild.build({
     entryPoints: ["src/manifest.ts"],
-    bundle: false,
+    bundle: true,
     outfile: "dist/manifest.js",
     format: "esm",
     platform: "node",

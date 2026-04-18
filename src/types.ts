@@ -1,28 +1,43 @@
-export type RelationshipTier = "close" | "friend" | "acquaintance" | "family" | "colleague" | "professional";
-export type RelationshipCategory = "personal" | "professional" | "family" | "health" | "community";
+import type {
+  FAMILY_LOGISTICS_TYPES,
+  GIFT_STATUSES,
+  INTERACTION_TYPES,
+  RELATIONSHIP_CATEGORIES,
+  RELATIONSHIP_TIERS,
+  SCORE_VALUES,
+} from "./constants.js";
+
+export type RelationshipTier = (typeof RELATIONSHIP_TIERS)[number];
+export type RelationshipCategory = (typeof RELATIONSHIP_CATEGORIES)[number];
+export type InteractionType = (typeof INTERACTION_TYPES)[number];
+export type GiftStatus = (typeof GIFT_STATUSES)[number];
+export type FamilyLogisticsType = (typeof FAMILY_LOGISTICS_TYPES)[number];
+export type ScoreValue = (typeof SCORE_VALUES)[number];
+export type ReconnectSource = "manual" | "automatic";
 
 export interface Contact {
   id: string;
   name: string;
   relationship: RelationshipTier;
   category: RelationshipCategory;
-  birthday?: string; // MM-DD
+  birthday?: string;
   anniversary?: string;
   phone?: string;
   email?: string;
-  handle?: string; // social media handle
+  handle?: string;
   notes: string;
   tags: string[];
   lastContactedAt?: string;
   lastInteractionId?: string;
   reminderFrequencyDays?: number;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Interaction {
   id: string;
   contactId: string;
-  type: "call" | "video" | "in_person" | "message" | "gift" | "event" | "other";
+  type: InteractionType;
   occurredAt: string;
   durationMinutes?: number;
   summary: string;
@@ -31,16 +46,21 @@ export interface Interaction {
   location?: string;
   notes: string;
   followUpItems: string[];
-  quality: 1 | 2 | 3 | 4 | 5; // 1=surface, 5=meaningful
+  quality: ScoreValue;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface BirthdayReminder {
   id: string;
   contactId: string;
-  date: string; // MM-DD
+  date: string;
   reminderDaysBefore: number[];
   sent: boolean;
   lastSentYear?: number;
+  deliveryLog: string[];
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface GiftIdea {
@@ -50,23 +70,27 @@ export interface GiftIdea {
   occasion: string;
   priceRange?: string;
   links?: string[];
-  status: "idea" | "purchased" | "given";
+  status: GiftStatus;
   purchasedAt?: string;
   givenAt?: string;
   notes: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface SocialEvent {
   id: string;
   title: string;
-  date: string; // ISO date
+  date: string;
   time?: string;
   location?: string;
-  attendees: string[]; // contact ids
+  attendees: string[];
   organizerId?: string;
   description: string;
   reminderDaysBefore: number[];
   notes: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface ConversationNote {
@@ -76,6 +100,7 @@ export interface ConversationNote {
   content: string;
   createdAt: string;
   tags: string[];
+  updatedAt?: string;
 }
 
 export interface ReconnectItem {
@@ -88,27 +113,37 @@ export interface ReconnectItem {
   attempts: number;
   completed: boolean;
   completedAt?: string;
+  source: ReconnectSource;
+  updatedAt?: string;
 }
 
 export interface FamilyLogisticsItem {
   id: string;
   title: string;
-  type: "transport" | "schedule" | "healthcare" | "financial" | "other";
+  type: FamilyLogisticsType;
   responsibleContactId?: string;
   dueDate?: string;
   completed: boolean;
   completedAt?: string;
   notes: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface EldercareCheckin {
   id: string;
   elderContactId: string;
   checkinAt: string;
-  wellbeingScore: 1 | 2 | 3 | 4 | 5;
-  mobilityScore?: 1 | 2 | 3 | 4 | 5;
-  moodScore?: 1 | 2 | 3 | 4 | 5;
+  wellbeingScore: ScoreValue;
+  mobilityScore?: ScoreValue;
+  moodScore?: ScoreValue;
   concerns: string[];
   followUpActions: string[];
   notes: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface RuntimeState {
+  lastReconnectNudgeDate?: string;
 }
