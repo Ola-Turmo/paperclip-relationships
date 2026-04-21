@@ -33,7 +33,8 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-const INSTANCE_SCOPE = { scopeKind: "instance" as const };
+const PERSONAL_COMPANY_NAME = "Personal";
+let personalCompanyIdPromise: Promise<string> | null = null;
 
 type ActionParams = Record<string, unknown>;
 type ActionHandler = (params: ActionParams) => Promise<unknown>;
@@ -237,22 +238,40 @@ function birthdayDisplay(reminder: BirthdayReminder, occurrence: BirthdayOccurre
   return `Birthday in ${occurrence.daysUntil} days (${reminder.date})`;
 }
 
+async function resolvePersonalCompanyId(ctx: PluginContext): Promise<string> {
+  if (!personalCompanyIdPromise) {
+    personalCompanyIdPromise = (async () => {
+      const companies = await ctx.companies.list({ limit: 200, offset: 0 });
+      const personal = companies.find((company) => company.name === PERSONAL_COMPANY_NAME);
+      if (!personal?.id) {
+        throw new Error(`Relationships requires a '${PERSONAL_COMPANY_NAME}' company`);
+      }
+      return personal.id;
+    })();
+  }
+  return personalCompanyIdPromise;
+}
+
+async function getPersonalScope(ctx: PluginContext) {
+  return { scopeKind: "company" as const, scopeId: await resolvePersonalCompanyId(ctx) };
+}
+
 async function getCollection<T>(ctx: PluginContext, key: string): Promise<T[]> {
-  const value = await ctx.state.get({ ...INSTANCE_SCOPE, stateKey: key });
+  const value = await ctx.state.get({ ...(await getPersonalScope(ctx)), stateKey: key });
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
 async function setCollection<T>(ctx: PluginContext, key: string, records: T[]): Promise<void> {
-  await ctx.state.set({ ...INSTANCE_SCOPE, stateKey: key }, records);
+  await ctx.state.set({ ...(await getPersonalScope(ctx)), stateKey: key }, records);
 }
 
 async function getRuntimeState(ctx: PluginContext): Promise<RuntimeState> {
-  const value = await ctx.state.get({ ...INSTANCE_SCOPE, stateKey: DATA_KEYS.RUNTIME });
+  const value = await ctx.state.get({ ...(await getPersonalScope(ctx)), stateKey: DATA_KEYS.RUNTIME });
   return (value && typeof value === "object" ? value : {}) as RuntimeState;
 }
 
 async function setRuntimeState(ctx: PluginContext, state: RuntimeState): Promise<void> {
-  await ctx.state.set({ ...INSTANCE_SCOPE, stateKey: DATA_KEYS.RUNTIME }, state);
+  await ctx.state.set({ ...(await getPersonalScope(ctx)), stateKey: DATA_KEYS.RUNTIME }, state);
 }
 
 function requireRecord<T extends IdentifiedRecord>(records: T[], id: string, recordName: string): T {
